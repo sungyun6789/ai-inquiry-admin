@@ -29,6 +29,13 @@ export default function Home() {
     setInquiryList((prev) => prev?.map((v) => (v.id === id ? data : v)));
   };
 
+  const deleteInquiry = async (id: number) => {
+    if (confirm('문의를 삭제하시겠습니까?')) {
+      await api.delete(`/inquiry/${id}`);
+      getInquiry();
+    }
+  };
+
   useEffect(() => {
     getInquiry();
   }, []);
@@ -44,17 +51,21 @@ export default function Home() {
       </div>
 
       <div className="flex text-lg font-medium border-b p-2">
+        <div className="flex-1">번호</div>
         <div className="flex-1">내용</div>
         <div className="flex-1">등록일</div>
+        <div className="flex-1">중요도</div>
         <div className="w-[200px]">상태</div>
-        <div className="flex-1 text-center">중요도</div>
+        <div className="w-[200px] text-center">-</div>
       </div>
 
       {inquiryList?.map((v) => {
         return (
-          <div key={v.id} className="border-b px-2 py-3 flex">
+          <div key={v.id} className="border-b px-2 py-3 flex items-center">
+            <div className="flex-1 line-clamp-1">{v.id}</div>
             <div className="flex-1 line-clamp-1">{v.content}</div>
             <div className="flex-1 line-clamp-1">{v.createdAt}</div>
+            <div className="flex-1 line-clamp-1">{v.priority ?? '-'}</div>
             <select
               value={v.status}
               className="w-[200px] outline-none"
@@ -66,7 +77,14 @@ export default function Home() {
               <option value="REVIEW_REQUIRED">REVIEW_REQUIRED</option>
               <option value="FAILED">FAILED</option>
             </select>
-            <div className="flex-1 line-clamp-1 text-center">{v.priority ?? '-'}</div>
+            <div className="w-[200px] flex justify-end">
+              <button
+                className="border px-5 py-1 cursor-pointer hover:bg-gray-50 outline-none"
+                onClick={() => deleteInquiry(v.id)}
+              >
+                삭제
+              </button>
+            </div>
           </div>
         );
       })}
