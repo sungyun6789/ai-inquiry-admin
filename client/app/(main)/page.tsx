@@ -8,7 +8,6 @@ type Status = 'PENDING' | 'PROCESSING' | 'AUTO_RESOLVED' | 'REVIEW_REQUIRED' | '
 type InquiryResponse = {
   id: number;
   assigneeId: number;
-  title: string;
   content: string;
   status: Status;
   priority: 'HIGH' | 'MEDIUM' | 'LOW' | null;
@@ -45,7 +44,6 @@ export default function Home() {
       </div>
 
       <div className="flex text-lg font-medium border-b p-2">
-        <div className="flex-1">제목</div>
         <div className="flex-1">내용</div>
         <div className="flex-1">등록일</div>
         <div className="w-[200px]">상태</div>
@@ -55,7 +53,6 @@ export default function Home() {
       {inquiryList?.map((v) => {
         return (
           <div key={v.id} className="border-b px-2 py-3 flex">
-            <div className="flex-1 line-clamp-1">{v.title}</div>
             <div className="flex-1 line-clamp-1">{v.content}</div>
             <div className="flex-1 line-clamp-1">{v.createdAt}</div>
             <select
