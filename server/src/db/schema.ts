@@ -25,7 +25,6 @@ export const users = mysqlTable('users', {
 export const inquiries = mysqlTable('inquiries', {
   id: int('id').primaryKey().autoincrement(),
   assigneeId: int('assignee_id'),
-  title: varchar('title', { length: 255 }).notNull(),
   content: text('content').notNull(),
   status: mysqlEnum('status', INQUIRY_STATUSES).notNull().default('PENDING'),
   priority: mysqlEnum('priority', INQUIRY_PRIORITIES),

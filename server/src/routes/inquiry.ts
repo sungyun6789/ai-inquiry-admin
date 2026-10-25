@@ -18,10 +18,10 @@ inquiryRouter.get('/', authenticate, async (req: Request, res: Response) => {
 // 문의 생성
 inquiryRouter.post('/', authenticate, admin, validate(createInquirySchema), async (req: Request, res: Response) => {
   const userId = req.user!.id;
-  const { title, content } = req.body;
+  const { content } = req.body;
 
   const insertedInquiry = await db.transaction(async (tx) => {
-    const [inserted] = await tx.insert(inquiries).values({ title, content, assigneeId: userId }).$returningId();
+    const [inserted] = await tx.insert(inquiries).values({ content, assigneeId: userId }).$returningId();
     await tx.insert(inquiryEvents).values({ inquiryId: inserted.id, userId, eventType: 'CREATED' });
     return inserted;
   });

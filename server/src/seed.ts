@@ -20,10 +20,7 @@ const seed = async () => {
 
     const insertedInquiries = await db
       .insert(inquiries)
-      .values([
-        { title: '문의 테스트 제목 01', content: '문의 테스트 내용 01' },
-        { title: '문의 테스트 제목 02', content: '문의 테스트 내용 02' },
-      ])
+      .values([{ content: '문의 테스트 내용 01' }, { content: '문의 테스트 내용 02' }])
       .$returningId();
 
     console.log(`시드 데이터 ${insertedInquiries.length}건 생성 완료`);
