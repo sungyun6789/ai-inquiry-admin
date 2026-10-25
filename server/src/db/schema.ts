@@ -31,7 +31,7 @@ export const inquiries = mysqlTable('inquiries', {
   priority: mysqlEnum('priority', INQUIRY_PRIORITIES),
   deletedAt: timestamp('deleted_at'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().onUpdateNow(),
 });
 
 // 문의 변경 로그

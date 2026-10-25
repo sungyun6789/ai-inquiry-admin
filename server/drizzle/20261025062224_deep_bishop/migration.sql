@@ -1,0 +1,1 @@
+ALTER TABLE `inquiries` MODIFY COLUMN `updated_at` timestamp DEFAULT (now()) NOT NULL ON UPDATE CURRENT_TIMESTAMP;
