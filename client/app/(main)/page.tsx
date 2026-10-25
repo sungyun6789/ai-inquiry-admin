@@ -18,6 +18,8 @@ type InquiryResponse = {
   updatedAt: string;
 };
 
+const PRIORITY_MAP = { HIGH: '높음', MEDIUM: '보통', LOW: '낮음' };
+
 export default function Home() {
   const [inquiryList, setInquiryList] = useState<InquiryResponse[]>();
 
@@ -76,7 +78,7 @@ export default function Home() {
             <div className="flex-1 line-clamp-1">{v.content}</div>
             <div className="w-[200px] line-clamp-1">{dayjs(v.createdAt).format('YYYY-MM-DD HH:mm:ss')}</div>
             <div className="w-[200px] line-clamp-1">{dayjs(v.updatedAt).format('YYYY-MM-DD HH:mm:ss')}</div>
-            <div className="w-[200px] line-clamp-1">{v.priority ?? '-'}</div>
+            <div className="w-[200px] line-clamp-1">{v.priority ? PRIORITY_MAP[v.priority] : '-'}</div>
             <select
               value={v.status}
               className="w-[200px] outline-none"
