@@ -3,12 +3,14 @@
 import { api } from '@/utils/api';
 import { useEffect, useState } from 'react';
 
+type Status = 'PENDING' | 'PROCESSING' | 'AUTO_RESOLVED' | 'REVIEW_REQUIRED' | 'FAILED';
+
 type InquiryResponse = {
   id: number;
   assigneeId: number;
   title: string;
   content: string;
-  status: 'PENDING' | 'PROCESSING' | 'AUTO_RESOLVED' | 'REVIEW_REQUIRED' | 'FAILED';
+  status: Status;
   priority: 'HIGH' | 'MEDIUM' | 'LOW' | null;
   deletedAt: string | null;
   createdAt: string;
@@ -21,6 +23,11 @@ export default function Home() {
   const getInquiry = async () => {
     const { data } = await api.get<InquiryResponse[]>('/inquiry');
     setInquiryList(data);
+  };
+
+  const updateInquiry = async (id: number, status: InquiryResponse['status']) => {
+    const { data } = await api.patch<InquiryResponse>(`/inquiry/${id}`, { status });
+    setInquiryList((prev) => prev?.map((v) => (v.id === id ? data : v)));
   };
 
   useEffect(() => {
@@ -51,7 +58,11 @@ export default function Home() {
             <div className="flex-1 line-clamp-1">{v.title}</div>
             <div className="flex-1 line-clamp-1">{v.content}</div>
             <div className="flex-1 line-clamp-1">{v.createdAt}</div>
-            <select defaultValue={v.status} className="w-[200px] outline-none">
+            <select
+              value={v.status}
+              className="w-[200px] outline-none"
+              onChange={(e) => updateInquiry(v.id, e.target.value as Status)}
+            >
               <option value="PENDING">PENDING</option>
               <option value="PROCESSING">PROCESSING</option>
               <option value="AUTO_RESOLVED">AUTO_RESOLVED</option>
