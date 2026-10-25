@@ -2,6 +2,7 @@
 
 import { api } from '@/utils/api';
 import { getMockInquiry } from '@/utils/mock';
+import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
 
 type Status = 'PENDING' | 'PROCESSING' | 'AUTO_RESOLVED' | 'REVIEW_REQUIRED' | 'FAILED';
@@ -61,7 +62,8 @@ export default function Home() {
       <div className="flex text-lg font-medium border-b p-2">
         <div className="w-[100px]">번호</div>
         <div className="flex-1">내용</div>
-        <div className="w-[300px]">등록일</div>
+        <div className="w-[200px]">등록일</div>
+        <div className="w-[200px]">수정일</div>
         <div className="w-[200px]">중요도</div>
         <div className="w-[200px]">상태</div>
         <div className="w-[100px] text-center">-</div>
@@ -72,7 +74,8 @@ export default function Home() {
           <div key={v.id} className="border-b px-2 py-3 flex items-center">
             <div className="w-[100px] line-clamp-1">{v.id}</div>
             <div className="flex-1 line-clamp-1">{v.content}</div>
-            <div className="w-[300px] line-clamp-1">{v.createdAt}</div>
+            <div className="w-[200px] line-clamp-1">{dayjs(v.createdAt).format('YYYY-MM-DD HH:mm:ss')}</div>
+            <div className="w-[200px] line-clamp-1">{dayjs(v.updatedAt).format('YYYY-MM-DD HH:mm:ss')}</div>
             <div className="w-[200px] line-clamp-1">{v.priority ?? '-'}</div>
             <select
               value={v.status}
