@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "node --watch src/app.ts",
+    "seed": "node src/seed.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -23,6 +24,7 @@
     "@types/express": "^5.0.6",
     "@types/node": "^26.6.5",
     "drizzle-kit": "1.0.0-rc.5",
+    "drizzle-seed": "1.0.0-rc.5",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   },
