@@ -1,7 +1,7 @@
-import { db } from './db/index.ts';
-import { users, inquiries, inquiryEvents } from './db/schema.ts';
+import { db } from './index.ts';
+import { users, inquiries, inquiryEvents } from './schema.ts';
 import { reset } from 'drizzle-seed';
-import { password } from './utils/password.ts';
+import { password } from '../utils/password.ts';
 
 const seed = async () => {
   try {
