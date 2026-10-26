@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { INQUIRY_PRIORITIES, INQUIRY_STATUSES } from '../db/schema.ts';
+import { INQUIRY_PRIORITIES } from '../db/schema.ts';
 
 export const createInquirySchema = z.object({
   content: z.string().min(1),
@@ -8,7 +8,6 @@ export const createInquirySchema = z.object({
 export const updateInquirySchema = z
   .object({
     content: z.string().min(1).optional(),
-    status: z.enum(INQUIRY_STATUSES).optional(),
     priority: z.enum(INQUIRY_PRIORITIES).optional(),
   })
   .refine((data) => Object.keys(data).length > 0, '변경할 값을 입력해주세요.');

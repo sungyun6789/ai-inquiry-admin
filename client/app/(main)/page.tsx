@@ -5,13 +5,10 @@ import { getMockInquiry } from '@/utils/mock';
 import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
 
-type Status = 'PENDING' | 'PROCESSING' | 'AUTO_RESOLVED' | 'REVIEW_REQUIRED' | 'FAILED';
-
 type InquiryResponse = {
   id: number;
   assigneeId: number;
   content: string;
-  status: Status;
   priority: 'HIGH' | 'MEDIUM' | 'LOW' | null;
   deletedAt: string | null;
   createdAt: string;
@@ -31,11 +28,6 @@ export default function Home() {
   const createInquiry = async () => {
     await api.post('/inquiry', { content: getMockInquiry() });
     getInquiry();
-  };
-
-  const updateInquiry = async (id: number, status: InquiryResponse['status']) => {
-    const { data } = await api.patch<InquiryResponse>(`/inquiry/${id}`, { status });
-    setInquiryList((prev) => prev?.map((v) => (v.id === id ? data : v)));
   };
 
   const deleteInquiry = async (id: number) => {
@@ -80,7 +72,6 @@ export default function Home() {
         <div className="w-[200px]">등록일</div>
         <div className="w-[200px]">수정일</div>
         <div className="w-[200px]">중요도</div>
-        <div className="w-[200px]">상태</div>
         <div className="w-[100px] text-center">-</div>
       </div>
 
@@ -92,17 +83,6 @@ export default function Home() {
             <div className="w-[200px] line-clamp-1">{dayjs(v.createdAt).format('YYYY-MM-DD HH:mm:ss')}</div>
             <div className="w-[200px] line-clamp-1">{dayjs(v.updatedAt).format('YYYY-MM-DD HH:mm:ss')}</div>
             <div className="w-[200px] line-clamp-1">{v.priority ? PRIORITY_MAP[v.priority] : '-'}</div>
-            <select
-              value={v.status}
-              className="w-[200px] outline-none"
-              onChange={(e) => updateInquiry(v.id, e.target.value as Status)}
-            >
-              <option value="PENDING">PENDING</option>
-              <option value="PROCESSING">PROCESSING</option>
-              <option value="AUTO_RESOLVED">AUTO_RESOLVED</option>
-              <option value="REVIEW_REQUIRED">REVIEW_REQUIRED</option>
-              <option value="FAILED">FAILED</option>
-            </select>
             <div className="w-[100px] flex justify-end">
               <button
                 className="border px-5 py-1 cursor-pointer hover:bg-gray-50 outline-none"

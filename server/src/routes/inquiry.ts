@@ -30,7 +30,7 @@ inquiryRouter.post('/', authenticate, admin, validate(createInquirySchema), asyn
   return res.status(201).json(insertedInquiry);
 });
 
-// 문의 상태 변경
+// 문의 수정
 inquiryRouter.patch('/:id', authenticate, admin, validate(updateInquirySchema), async (req: Request, res: Response) => {
   const userId = req.user!.id;
   const id = Number(req.params.id);
@@ -44,17 +44,7 @@ inquiryRouter.patch('/:id', authenticate, admin, validate(updateInquirySchema), 
     if (!before) return null;
 
     await tx.update(inquiries).set(req.body).where(eq(inquiries.id, id));
-
-    if (req.body.status && req.body.status !== before.status) {
-      await tx.insert(inquiryEvents).values({
-        inquiryId: id,
-        userId,
-        eventType: 'STATUS_CHANGED',
-        metadata: { from: before.status, to: req.body.status },
-      });
-    } else {
-      await tx.insert(inquiryEvents).values({ inquiryId: id, userId, eventType: 'UPDATED' });
-    }
+    await tx.insert(inquiryEvents).values({ inquiryId: id, userId, eventType: 'UPDATED' });
 
     const [after] = await tx.select().from(inquiries).where(eq(inquiries.id, id));
     return after;
