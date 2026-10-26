@@ -1,3 +1,4 @@
+import './workers/priority.worker.ts';
 import express, { type Request, type Response } from 'express';
 import { authRouter } from './routes/auth.ts';
 import { errorHandler } from './middlewares/error.middleware.ts';

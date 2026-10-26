@@ -6,6 +6,7 @@ import { eq, and, isNull } from 'drizzle-orm';
 import { admin } from '../middlewares/admin.middleware.ts';
 import { validate } from '../middlewares/validate.middleware.ts';
 import { createInquirySchema, updateInquirySchema } from '../schemas/inquiry.schema.ts';
+import { priorityQueue } from '../queues/priority.queue.ts';
 
 export const inquiryRouter = Router();
 
@@ -88,4 +89,22 @@ inquiryRouter.delete('/:id', authenticate, admin, async (req: Request, res: Resp
   }
 
   return res.status(204).end();
+});
+
+// 문의 분류
+inquiryRouter.post('/priority', authenticate, admin, async (req: Request, res: Response) => {
+  const userId = req.user!.id;
+
+  const rows = await db
+    .select({ id: inquiries.id })
+    .from(inquiries)
+    .where(and(isNull(inquiries.priority), isNull(inquiries.deletedAt)));
+
+  if (rows.length === 0) return res.json({ message: '중요도를 분류할 문의가 없습니다.' });
+
+  await priorityQueue.addBulk(
+    rows.map((r) => ({ name: 'classify', data: { inquiryId: r.id, userId }, opts: { jobId: `priority-${r.id}` } })),
+  );
+
+  return res.status(202).json({ count: rows.length });
 });
