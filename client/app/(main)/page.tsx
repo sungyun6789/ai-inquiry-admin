@@ -45,6 +45,14 @@ export default function Home() {
     }
   };
 
+  const classifyInquiryPriority = async () => {
+    if (confirm('문의 중요도를 분류하시겠습니까?')) {
+      const { data } = await api.post('/inquiry/priority');
+      if (data.message) alert(data.message);
+      getInquiry();
+    }
+  };
+
   useEffect(() => {
     getInquiry();
   }, []);
@@ -57,7 +65,12 @@ export default function Home() {
           <button className="border p-2 cursor-pointer h-fit hover:bg-gray-50 outline-none" onClick={createInquiry}>
             문의 생성
           </button>
-          <button className="border p-2 cursor-pointer h-fit hover:bg-gray-50 outline-none">문의 분류</button>
+          <button
+            className="border p-2 cursor-pointer h-fit hover:bg-gray-50 outline-none"
+            onClick={classifyInquiryPriority}
+          >
+            문의 중요도 분류
+          </button>
         </div>
       </div>
 
