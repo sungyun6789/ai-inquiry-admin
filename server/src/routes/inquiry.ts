@@ -2,7 +2,7 @@ import { type Request, type Response, Router } from 'express';
 import { authenticate } from '../middlewares/auth.middleware.ts';
 import { db } from '../db/index.ts';
 import { inquiries, inquiryEvents } from '../db/schema.ts';
-import { eq, and, isNull } from 'drizzle-orm';
+import { eq, and, isNull, asc } from 'drizzle-orm';
 import { admin } from '../middlewares/admin.middleware.ts';
 import { validate } from '../middlewares/validate.middleware.ts';
 import { createInquirySchema, updateInquirySchema } from '../schemas/inquiry.schema.ts';
@@ -12,7 +12,11 @@ export const inquiryRouter = Router();
 
 // 문의 조회
 inquiryRouter.get('/', authenticate, async (req: Request, res: Response) => {
-  const inquiry = await db.select().from(inquiries).where(isNull(inquiries.deletedAt));
+  const inquiry = await db
+    .select()
+    .from(inquiries)
+    .where(isNull(inquiries.deletedAt))
+    .orderBy(asc(inquiries.priority), asc(inquiries.createdAt));
   return res.json(inquiry);
 });
 
