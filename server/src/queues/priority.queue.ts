@@ -3,4 +3,5 @@ import { redis } from '../redis.ts';
 
 export const priorityQueue = new Queue('priority', {
   connection: redis,
+  defaultJobOptions: { removeOnComplete: true, removeOnFail: true },
 });
