@@ -20,7 +20,11 @@ const seed = async () => {
 
     const insertedInquiries = await db
       .insert(inquiries)
-      .values([{ content: '문의 테스트 내용 01' }, { content: '문의 테스트 내용 02' }])
+      .values([
+        { content: '회원가입에서 에러가 발생합니다.' },
+        { content: '배송 조회가 3일째 같은 위치에 멈춰 있습니다.' },
+        { content: '다크 모드도 지원해 주시면 안 되나요?' },
+      ])
       .$returningId();
 
     console.log(`시드 데이터 ${insertedInquiries.length}건 생성 완료`);

@@ -27,6 +27,16 @@ inquiryRouter.post('/', authenticate, admin, validate(createInquirySchema), asyn
     return inserted;
   });
 
+  try {
+    await priorityQueue.add(
+      'classify',
+      { inquiryId: insertedInquiry.id, userId },
+      { jobId: `priority-${insertedInquiry.id}` },
+    );
+  } catch (error) {
+    console.error(error);
+  }
+
   return res.status(201).json(insertedInquiry);
 });
 
