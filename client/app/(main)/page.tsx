@@ -16,6 +16,11 @@ type InquiryResponse = {
 };
 
 const PRIORITY_MAP = { HIGH: '높음', MEDIUM: '보통', LOW: '낮음' };
+const PRIORITY_STYLE = {
+  HIGH: 'bg-red-100 text-red-700',
+  MEDIUM: 'bg-amber-100 text-amber-700',
+  LOW: 'bg-green-100 text-green-700',
+};
 
 export default function Home() {
   const [inquiryList, setInquiryList] = useState<InquiryResponse[]>();
@@ -47,7 +52,7 @@ export default function Home() {
 
   useEffect(() => {
     getInquiry();
-    const timer = setInterval(getInquiry, 3000);
+    const timer = setInterval(getInquiry, 5000);
     return () => clearInterval(timer);
   }, []);
 
@@ -84,7 +89,13 @@ export default function Home() {
             <div className="flex-1 line-clamp-1">{v.content}</div>
             <div className="w-[200px] line-clamp-1">{dayjs(v.createdAt).format('YYYY-MM-DD HH:mm:ss')}</div>
             <div className="w-[200px] line-clamp-1">{dayjs(v.updatedAt).format('YYYY-MM-DD HH:mm:ss')}</div>
-            <div className="w-[200px] line-clamp-1">{v.priority ? PRIORITY_MAP[v.priority] : '-'}</div>
+            <div className="w-[200px]">
+              <span
+                className={`rounded-full px-3 py-1 text-sm font-semibold ${v.priority ? PRIORITY_STYLE[v.priority] : 'bg-gray-100 text-gray-600'}`}
+              >
+                {v.priority ? PRIORITY_MAP[v.priority] : '미분류'}
+              </span>
+            </div>
             <div className="w-[100px] flex justify-end">
               <button
                 className="border px-5 py-1 cursor-pointer hover:bg-gray-50 outline-none"
