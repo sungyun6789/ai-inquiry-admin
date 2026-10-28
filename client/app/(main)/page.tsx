@@ -47,6 +47,8 @@ export default function Home() {
 
   useEffect(() => {
     getInquiry();
+    const timer = setInterval(getInquiry, 3000);
+    return () => clearInterval(timer);
   }, []);
 
   return (
