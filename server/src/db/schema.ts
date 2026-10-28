@@ -1,4 +1,4 @@
-import { mysqlTable, mysqlEnum, int, varchar, text, timestamp, json } from 'drizzle-orm/mysql-core';
+import { mysqlTable, mysqlEnum, int, varchar, text, timestamp } from 'drizzle-orm/mysql-core';
 
 // 사용자 권한
 export const USER_ROLES = ['USER', 'ADMIN'] as const;
@@ -35,6 +35,5 @@ export const inquiryEvents = mysqlTable('inquiry_events', {
   inquiryId: int('inquiry_id').notNull(),
   userId: int('user_id'),
   eventType: mysqlEnum('event_type', INQUIRY_EVENT_TYPES).notNull(),
-  metadata: json('metadata'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
