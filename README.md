@@ -83,3 +83,7 @@ cd client
 pnpm install
 pnpm dev               # http://localhost:3000
 ```
+
+## 시연
+
+![시연](demo.gif)
