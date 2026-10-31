@@ -1,0 +1,709 @@
+<meta charset="utf-8">
+<title>AI Inquiry Admin 디자인 시스템</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+  /* Layout: 왼쪽 고정 목차 + 오른쪽 문서. 컴포넌트마다 설명 → 미리보기 캔버스 → 속성 → 코드 → 사용 기준 */
+  :root {
+    color-scheme: light;
+    --bg: #fff;
+    --fg: oklch(20.5% 0 0);
+    --subtle: oklch(98.5% 0 0);
+    --chip: oklch(97% 0 0);
+    --muted-fg: oklch(55.6% 0 0);
+    --line: oklch(92.2% 0 0);
+
+    --font-sans: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+    /* 미리보기와 견본에 쓰는 디자인 시스템의 실제 값 */
+    --ds-background: #fff;
+    --ds-foreground: oklch(20.5% 0 0);
+    --ds-muted: oklch(98.5% 0 0);
+    --ds-muted-foreground: oklch(55.6% 0 0);
+    --ds-border: oklch(92.2% 0 0);
+    --ds-primary: oklch(20.5% 0 0);
+    --ds-primary-foreground: #fff;
+    --ds-red-100: oklch(93.6% 0.032 17.717);
+    --ds-red-700: oklch(50.5% 0.213 27.518);
+    --ds-amber-100: oklch(96.2% 0.059 95.617);
+    --ds-amber-700: oklch(55.5% 0.163 48.998);
+    --ds-green-100: oklch(96.2% 0.044 156.743);
+    --ds-green-700: oklch(52.7% 0.154 150.069);
+    --ds-neutral-100: oklch(97% 0 0);
+    --ds-neutral-600: oklch(43.9% 0 0);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.7;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  h1, h2, h3, p, ul, dl, dd, figure, pre { margin: 0; }
+  table { font: inherit; color: inherit; border-collapse: collapse; }
+  code { font-family: var(--font-mono); font-size: 0.875em; }
+  :not(pre) > code { padding: 0.125em 0.375em; border-radius: 4px; background: var(--chip); overflow-wrap: anywhere; }
+  a { color: inherit; }
+  a:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; border-radius: 2px; }
+  @media (prefers-reduced-motion: no-preference) { :root { scroll-behavior: smooth; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; } }
+
+  .page {
+    max-width: 1160px;
+    margin: 0 auto;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 56px 80px;
+  }
+  @media (min-width: 720px) {
+    .page {
+      padding-left: max(40px, env(safe-area-inset-left, 0px));
+      padding-right: max(40px, env(safe-area-inset-right, 0px));
+    }
+  }
+
+  .masthead { display: grid; gap: 16px; padding-bottom: 48px; border-bottom: 1px solid var(--line); }
+  .eyebrow { font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted-fg); }
+  h1 { font-size: 36px; line-height: 40px; font-weight: 700; text-wrap: balance; }
+  .lead { max-width: 60ch; }
+  .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px 24px; margin-top: 16px; }
+  .facts div { display: grid; gap: 2px; align-content: start; }
+  .facts dt { font-size: 12px; line-height: 16px; color: var(--muted-fg); }
+  .facts dd { font-size: 14px; line-height: 20px; }
+
+  .layout { display: grid; grid-template-columns: 176px minmax(0, 1fr); gap: 56px; align-items: start; padding-top: 48px; }
+  .toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 32px); display: grid; gap: 24px; font-size: 14px; line-height: 20px; }
+  .toc-group { display: grid; gap: 8px; }
+  .toc-label { font-size: 12px; line-height: 16px; color: var(--muted-fg); }
+  .toc ul { list-style: none; padding: 0; display: grid; gap: 6px; }
+  .toc a { text-decoration: none; color: var(--muted-fg); }
+  .toc a:hover { color: var(--fg); }
+
+  main { display: grid; min-width: 0; }
+  .section { display: grid; gap: 24px; min-width: 0; padding-block: 48px; border-top: 1px solid var(--line); scroll-margin-top: 16px; }
+  main > .section:first-child { border-top: 0; padding-top: 0; }
+  .section-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 4px 16px; }
+  .title-group { display: grid; gap: 4px; }
+  .kicker { font-size: 12px; line-height: 16px; color: var(--muted-fg); }
+  h2 { font-size: 24px; line-height: 32px; font-weight: 700; text-wrap: balance; }
+  :not(pre) > code.path { padding: 0; background: none; font-size: 12px; line-height: 16px; color: var(--muted-fg); }
+  .intro { max-width: 68ch; }
+  .block { display: grid; gap: 12px; min-width: 0; }
+  h3.sub { font-size: 14px; line-height: 20px; font-weight: 600; color: var(--muted-fg); }
+  .note { font-size: 14px; line-height: 1.7; color: var(--muted-fg); max-width: 68ch; }
+
+  .principles { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px 32px; }
+  .principle { display: grid; gap: 8px; align-content: start; padding-top: 16px; border-top: 1px solid var(--fg); }
+  .principle h3 { font-size: 16px; line-height: 24px; font-weight: 600; }
+  .principle p { font-size: 14px; line-height: 1.7; color: var(--muted-fg); }
+
+  .scroll { overflow-x: auto; min-width: 0; }
+  .doc-table { width: 100%; min-width: 600px; font-size: 14px; line-height: 20px; }
+  .doc-table th { text-align: left; font-size: 12px; line-height: 16px; font-weight: 500; color: var(--muted-fg); padding: 0 16px 8px 0; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  .doc-table td { padding: 12px 16px 12px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .doc-table th:last-child, .doc-table td:last-child { padding-right: 0; }
+  .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .dim { display: block; font-size: 12px; line-height: 16px; color: var(--muted-fg); }
+  .token { display: flex; gap: 12px; align-items: flex-start; }
+  .swatch { flex: none; width: 32px; height: 32px; border-radius: 6px; background: var(--swatch); box-shadow: inset 0 0 0 1px var(--line); }
+
+  .type-scale { list-style: none; padding: 0; display: grid; }
+  .type-scale li { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 8px 32px; align-items: baseline; padding-block: 20px; border-bottom: 1px solid var(--line); }
+  .type-scale li:first-child { border-top: 1px solid var(--line); }
+  .type-meta { display: grid; gap: 4px; justify-items: start; font-size: 12px; line-height: 16px; color: var(--muted-fg); }
+  .t-3xl { font-size: 30px; line-height: 36px; font-weight: 600; }
+  .t-2xl { font-size: 24px; line-height: 32px; font-weight: 700; }
+  .t-sm-medium { font-size: 14px; line-height: 20px; font-weight: 500; }
+  .t-sm { font-size: 14px; line-height: 20px; }
+  .t-xs-semibold { font-size: 12px; line-height: 16px; font-weight: 600; }
+
+  .radius-box { width: 88px; height: 56px; border: 1px solid var(--ds-foreground); background: var(--ds-muted); }
+  .r-md { border-radius: 0.375rem; }
+  .r-lg { border-radius: 0.5rem; }
+  .r-full { border-radius: 9999px; }
+  .bar { width: 88px; border: 1px solid var(--ds-border); border-radius: 0.375rem; background: var(--ds-muted); }
+  .h-32 { height: 32px; }
+  .h-40 { height: 40px; }
+  .h-44 { height: 44px; }
+
+  .canvas {
+    display: grid;
+    gap: 28px;
+    min-width: 0;
+    padding: 32px 24px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--ds-background);
+    color: var(--ds-foreground);
+    font-size: 14px;
+    line-height: 20px;
+  }
+  .canvas-row { display: grid; gap: 12px; min-width: 0; }
+  .canvas-label { font-size: 12px; line-height: 16px; color: var(--ds-muted-foreground); }
+  .specimens { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px 24px; }
+  .specimens figure { display: grid; gap: 8px; justify-items: start; max-width: 100%; }
+  .canvas figcaption { font-family: var(--font-mono); font-size: 12px; line-height: 16px; color: var(--ds-muted-foreground); }
+
+  .rules { display: grid; gap: 8px; padding-left: 1.25em; max-width: 68ch; }
+  .rules li::marker { color: var(--muted-fg); }
+
+  pre.code { padding: 16px 20px; border: 1px solid var(--line); border-radius: 8px; background: var(--subtle); overflow-x: auto; font-size: 14px; line-height: 1.7; tab-size: 2; }
+  pre.code code { font-size: 1em; }
+
+  .cautions { display: grid; gap: 32px; }
+  .caution { display: grid; gap: 8px; max-width: 68ch; }
+  .caution h3 { font-size: 16px; line-height: 24px; font-weight: 600; }
+
+  .foot { margin-top: 8px; padding-top: 32px; border-top: 1px solid var(--line); font-size: 12px; line-height: 1.7; color: var(--muted-fg); max-width: 80ch; }
+
+  /* 미리보기 컴포넌트: client/components/ui의 Tailwind 클래스를 같은 값으로 옮긴 것 */
+  .ds-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    border: 0 solid var(--ds-border);
+    border-radius: 0.375rem;
+    background-color: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke;
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .ds-btn--sm { height: 2rem; padding-inline: 0.75rem; }
+  .ds-btn--md { height: 2.5rem; padding-inline: 1rem; }
+  .ds-btn--primary { background-color: var(--ds-primary); color: var(--ds-primary-foreground); }
+  .ds-btn--primary:hover, .ds-btn--primary.is-hover { background-color: color-mix(in oklab, var(--ds-primary) 85%, transparent); }
+  .ds-btn--secondary { border-width: 1px; background-color: var(--ds-background); }
+  .ds-btn--secondary:hover, .ds-btn--secondary.is-hover { background-color: var(--ds-muted); }
+  .ds-btn:focus-visible, .ds-btn.is-focus { outline: 2px solid var(--ds-foreground); outline-offset: 2px; }
+
+  .ds-input {
+    width: 15rem;
+    max-width: 100%;
+    height: 2.5rem;
+    margin: 0;
+    padding: 0 0.75rem;
+    border: 1px solid var(--ds-border);
+    border-radius: 0.375rem;
+    background-color: var(--ds-background);
+    color: inherit;
+    font: inherit;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    outline: none;
+    transition-property: color, background-color, border-color;
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .ds-input::placeholder { color: var(--ds-muted-foreground); opacity: 1; }
+  .ds-input:focus, .ds-input.is-focus { border-color: var(--ds-foreground); }
+
+  .ds-badge { display: inline-flex; align-items: center; padding: 0.125rem 0.625rem; border-radius: 9999px; font-size: 0.75rem; line-height: 1rem; font-weight: 600; white-space: nowrap; }
+  .ds-badge--danger { background-color: var(--ds-red-100); color: var(--ds-red-700); }
+  .ds-badge--warning { background-color: var(--ds-amber-100); color: var(--ds-amber-700); }
+  .ds-badge--success { background-color: var(--ds-green-100); color: var(--ds-green-700); }
+  .ds-badge--neutral { background-color: var(--ds-neutral-100); color: var(--ds-neutral-600); }
+
+  .ds-table-wrap { overflow-x: auto; border: 1px solid var(--ds-border); border-radius: 0.5rem; }
+  .ds-table { width: 100%; min-width: 760px; table-layout: fixed; text-align: left; font-size: 0.875rem; line-height: 1.25rem; }
+  .ds-table thead { border-bottom: 1px solid var(--ds-border); background-color: var(--ds-muted); }
+  .ds-table tbody tr + tr { border-top: 1px solid var(--ds-border); }
+  .ds-table tr { transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1); }
+  .ds-table tbody tr:hover { background-color: var(--ds-muted); }
+  .ds-table th { height: 2.75rem; padding: 0 1rem; text-align: inherit; font-weight: 500; color: var(--ds-muted-foreground); }
+  .ds-table td { padding: 0.75rem 1rem; }
+  .ds-table .ds-center { text-align: center; }
+  .ds-table .ds-right { text-align: right; }
+  .ds-truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  @media (max-width: 920px) {
+    .layout { grid-template-columns: minmax(0, 1fr); gap: 0; padding-top: 24px; }
+    .toc { position: static; display: flex; flex-wrap: wrap; gap: 12px 32px; padding-bottom: 24px; border-bottom: 1px solid var(--line); }
+    .toc-group { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+    .toc ul { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+    main > .section:first-child { padding-top: 40px; }
+  }
+  @media (max-width: 640px) {
+    .type-scale li { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (max-width: 480px) {
+    .page { padding-block: 32px 56px; }
+    h1 { font-size: 30px; line-height: 36px; }
+    .canvas { padding: 24px 16px; }
+  }
+</style>
+
+<div class="page" lang="ko">
+  <header class="masthead">
+    <p class="eyebrow">AI Inquiry Admin</p>
+    <h1>디자인 시스템</h1>
+    <p class="lead">문의 관리 화면의 모노톤 스타일을 색상 토큰 7개와 컴포넌트 4종으로 정리했습니다. 모든 값은 코드와 Tailwind CSS 4.3.3 테마에서 그대로 가져왔습니다.</p>
+    <dl class="facts">
+      <div><dt>토큰</dt><dd><code>client/app/globals.css</code></dd></div>
+      <div><dt>컴포넌트</dt><dd><code>client/components/ui</code></dd></div>
+      <div><dt>글꼴</dt><dd>Noto Sans KR</dd></div>
+      <div><dt>테마</dt><dd>라이트</dd></div>
+    </dl>
+  </header>
+
+  <div class="layout">
+    <nav class="toc" aria-label="목차">
+      <div class="toc-group">
+        <p class="toc-label">기초</p>
+        <ul>
+          <li><a href="#principles">원칙</a></li>
+          <li><a href="#color">색상</a></li>
+          <li><a href="#type">타이포그래피</a></li>
+          <li><a href="#shape">모서리와 크기</a></li>
+        </ul>
+      </div>
+      <div class="toc-group">
+        <p class="toc-label">컴포넌트</p>
+        <ul>
+          <li><a href="#button">Button</a></li>
+          <li><a href="#input">Input</a></li>
+          <li><a href="#badge">Badge</a></li>
+          <li><a href="#table">Table</a></li>
+        </ul>
+      </div>
+      <div class="toc-group">
+        <p class="toc-label">사용</p>
+        <ul>
+          <li><a href="#cautions">사용 시 주의</a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <main>
+      <section id="principles" class="section">
+        <h2>원칙</h2>
+        <div class="principles">
+          <div class="principle">
+            <h3>모노톤</h3>
+            <p>흰 배경과 무채색으로 화면을 구성합니다. 기존 관리자 화면의 톤을 그대로 유지했습니다.</p>
+          </div>
+          <div class="principle">
+            <h3>강조는 한 곳에</h3>
+            <p>검정 primary 버튼은 화면의 주요 동작 하나에만 씁니다. 목록 화면에서는 ‘문의 중요도 분류’, 로그인 화면에서는 ‘로그인’입니다.</p>
+          </div>
+          <div class="principle">
+            <h3>색은 중요도에만</h3>
+            <p>유채색은 문의 중요도 배지에만 씁니다. 다른 곳에 색이 없어야 급한 문의가 먼저 눈에 들어옵니다.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="color" class="section">
+        <h2>색상</h2>
+        <p class="intro">화면 코드에서는 아래 7개의 의미 토큰만 씁니다. <code>globals.css</code>의 <code>@theme</code>에서 Tailwind 팔레트를 가리키도록 정의되어 있어, <code>bg-primary</code>나 <code>text-muted-foreground</code> 같은 클래스로 바로 쓸 수 있습니다.</p>
+        <div class="scroll">
+          <table class="doc-table">
+            <thead>
+              <tr><th>토큰</th><th>값</th><th>쓰는 곳</th><th>글자 대비</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><div class="token"><span class="swatch" style="--swatch: var(--ds-background)"></span><div><code>background</code><span class="dim">bg-background</span></div></div></td>
+                <td>white<span class="dim">#fff</span></td>
+                <td>페이지, 입력창, secondary 버튼의 배경</td>
+                <td class="num">—</td>
+              </tr>
+              <tr>
+                <td><div class="token"><span class="swatch" style="--swatch: var(--ds-foreground)"></span><div><code>foreground</code><span class="dim">text-foreground</span></div></div></td>
+                <td>neutral-900<span class="dim">oklch(20.5% 0 0)</span></td>
+                <td>본문 글자, 입력창 포커스 테두리, 포커스 링</td>
+                <td class="num">17.91:1<span class="dim">background 위</span></td>
+              </tr>
+              <tr>
+                <td><div class="token"><span class="swatch" style="--swatch: var(--ds-muted)"></span><div><code>muted</code><span class="dim">bg-muted</span></div></div></td>
+                <td>neutral-50<span class="dim">oklch(98.5% 0 0)</span></td>
+                <td>표 머리글 배경, 행 hover, secondary 버튼 hover</td>
+                <td class="num">—</td>
+              </tr>
+              <tr>
+                <td><div class="token"><span class="swatch" style="--swatch: var(--ds-muted-foreground)"></span><div><code>muted-foreground</code><span class="dim">text-muted-foreground</span></div></div></td>
+                <td>neutral-500<span class="dim">oklch(55.6% 0 0)</span></td>
+                <td>표 머리글 글자, placeholder</td>
+                <td class="num">4.73:1<span class="dim">background 위</span>4.53:1<span class="dim">muted 위</span></td>
+              </tr>
+              <tr>
+                <td><div class="token"><span class="swatch" style="--swatch: var(--ds-border)"></span><div><code>border</code><span class="dim">border, divide-y</span></div></div></td>
+                <td>neutral-200<span class="dim">oklch(92.2% 0 0)</span></td>
+                <td>모든 테두리와 구분선의 기본색</td>
+                <td class="num">1.26:1<span class="dim">background 위</span></td>
+              </tr>
+              <tr>
+                <td><div class="token"><span class="swatch" style="--swatch: var(--ds-primary)"></span><div><code>primary</code><span class="dim">bg-primary</span></div></div></td>
+                <td>neutral-900<span class="dim">oklch(20.5% 0 0)</span></td>
+                <td>primary 버튼 배경, hover 때는 85% 불투명도</td>
+                <td class="num">—</td>
+              </tr>
+              <tr>
+                <td><div class="token"><span class="swatch" style="--swatch: var(--ds-primary-foreground)"></span><div><code>primary-foreground</code><span class="dim">text-primary-foreground</span></div></div></td>
+                <td>white<span class="dim">#fff</span></td>
+                <td>primary 버튼 글자</td>
+                <td class="num">17.91:1<span class="dim">primary 위</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="note">라이트 테마만 정의되어 있습니다.</p>
+      </section>
+
+      <section id="type" class="section">
+        <h2>타이포그래피</h2>
+        <p class="intro">글꼴은 Noto Sans KR 하나입니다. <code>next/font/google</code>로 불러온 <code>--font-noto-sans-kr</code> 변수를 Tailwind의 <code>--font-sans</code>에 연결해 기본 글꼴로 씁니다. 별도 패키지는 설치하지 않았습니다.</p>
+        <ul class="type-scale">
+          <li>
+            <div class="type-meta"><code>text-3xl font-semibold</code><span>30 / 36px · 600 · 로그인 화면 제목</span></div>
+            <p class="t-3xl">AI Inquiry Admin</p>
+          </li>
+          <li>
+            <div class="type-meta"><code>text-2xl font-bold</code><span>24 / 32px · 700 · 목록 화면 제목</span></div>
+            <p class="t-2xl">문의 내역 관리</p>
+          </li>
+          <li>
+            <div class="type-meta"><code>text-sm font-medium</code><span>14 / 20px · 500 · 버튼, 표 머리글</span></div>
+            <p class="t-sm-medium">문의 중요도 분류</p>
+          </li>
+          <li>
+            <div class="type-meta"><code>text-sm</code><span>14 / 20px · 400 · 입력창, 표 본문</span></div>
+            <p class="t-sm">배송 조회가 3일째 같은 위치에 멈춰 있습니다.</p>
+          </li>
+          <li>
+            <div class="type-meta"><code>text-xs font-semibold</code><span>12 / 16px · 600 · 배지</span></div>
+            <p class="t-xs-semibold">높음 · 보통 · 낮음 · 미분류</p>
+          </li>
+        </ul>
+      </section>
+
+      <section id="shape" class="section">
+        <h2>모서리와 크기</h2>
+        <div class="canvas">
+          <div class="canvas-row">
+            <p class="canvas-label">모서리</p>
+            <div class="specimens">
+              <figure><div class="radius-box r-md"></div><figcaption>rounded-md · 6px<br>버튼, 입력창</figcaption></figure>
+              <figure><div class="radius-box r-lg"></div><figcaption>rounded-lg · 8px<br>표 바깥 테두리</figcaption></figure>
+              <figure><div class="radius-box r-full"></div><figcaption>rounded-full<br>배지</figcaption></figure>
+            </div>
+          </div>
+          <div class="canvas-row">
+            <p class="canvas-label">높이</p>
+            <div class="specimens">
+              <figure><div class="bar h-32"></div><figcaption>h-8 · 32px<br>작은 버튼</figcaption></figure>
+              <figure><div class="bar h-40"></div><figcaption>h-10 · 40px<br>버튼, 입력창</figcaption></figure>
+              <figure><div class="bar h-44"></div><figcaption>h-11 · 44px<br>표 머리글</figcaption></figure>
+            </div>
+          </div>
+        </div>
+        <p class="intro">간격은 Tailwind 간격 단위(1 = 4px)로 지정합니다. 버튼의 좌우 여백은 sm 12px, md 16px이고 입력창은 12px입니다. 표 칸은 좌우 16px, 위아래 12px이고 배지는 좌우 10px, 위아래 2px입니다.</p>
+      </section>
+
+      <section id="button" class="section">
+        <div class="section-head">
+          <div class="title-group"><p class="kicker">컴포넌트</p><h2>Button</h2></div>
+          <code class="path">client/components/ui/button.tsx</code>
+        </div>
+        <p class="intro">동작을 실행하는 버튼입니다. 기본값은 <code>secondary</code>, <code>md</code>입니다.</p>
+        <div class="canvas">
+          <div class="canvas-row">
+            <p class="canvas-label">변형</p>
+            <div class="specimens">
+              <figure><button type="button" class="ds-btn ds-btn--secondary ds-btn--md">문의 생성</button><figcaption>secondary · md</figcaption></figure>
+              <figure><button type="button" class="ds-btn ds-btn--primary ds-btn--md">문의 중요도 분류</button><figcaption>primary · md</figcaption></figure>
+              <figure><button type="button" class="ds-btn ds-btn--secondary ds-btn--sm">삭제</button><figcaption>secondary · sm</figcaption></figure>
+            </div>
+          </div>
+          <div class="canvas-row">
+            <p class="canvas-label">상태</p>
+            <div class="specimens">
+              <figure><span class="ds-btn ds-btn--secondary ds-btn--md is-hover">문의 생성</span><figcaption>secondary hover</figcaption></figure>
+              <figure><span class="ds-btn ds-btn--primary ds-btn--md is-hover">문의 중요도 분류</span><figcaption>primary hover</figcaption></figure>
+              <figure><span class="ds-btn ds-btn--primary ds-btn--md is-focus">문의 중요도 분류</span><figcaption>키보드 포커스</figcaption></figure>
+            </div>
+          </div>
+        </div>
+        <div class="block">
+          <h3 class="sub">속성</h3>
+          <div class="scroll">
+            <table class="doc-table">
+              <thead><tr><th>속성</th><th>타입</th><th>기본값</th><th>설명</th></tr></thead>
+              <tbody>
+                <tr><td><code>variant</code></td><td><code>'primary' | 'secondary'</code></td><td><code>'secondary'</code></td><td>primary는 검정 배경, secondary는 흰 배경과 테두리</td></tr>
+                <tr><td><code>size</code></td><td><code>'sm' | 'md'</code></td><td><code>'md'</code></td><td>높이 sm 32px, md 40px</td></tr>
+                <tr><td><code>className</code></td><td><code>string</code></td><td><code>''</code></td><td>기본 클래스 뒤에 덧붙음</td></tr>
+                <tr><td>그 외</td><td>button 속성</td><td>—</td><td><code>onClick</code>, <code>type</code> 등을 그대로 전달</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="block">
+          <h3 class="sub">코드</h3>
+          <pre class="code"><code>import { Button } from '@/components/ui/button';
+
+&lt;Button onClick={createInquiry}&gt;문의 생성&lt;/Button&gt;
+&lt;Button variant="primary" onClick={classifyInquiryPriority}&gt;
+  문의 중요도 분류
+&lt;/Button&gt;
+&lt;Button size="sm" onClick={() =&gt; deleteInquiry(v.id)}&gt;
+  삭제
+&lt;/Button&gt;</code></pre>
+        </div>
+        <div class="block">
+          <h3 class="sub">사용 기준</h3>
+          <ul class="rules">
+            <li>primary는 화면에 하나만 둡니다. 나머지 동작은 secondary로 둡니다.</li>
+            <li>표의 행 안에 들어가는 동작은 <code>size="sm"</code>을 씁니다.</li>
+            <li>키보드로 포커스하면 foreground 색의 2px 외곽선이 2px 간격을 두고 표시됩니다.</li>
+            <li>disabled 상태의 스타일은 아직 없습니다.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="input" class="section">
+        <div class="section-head">
+          <div class="title-group"><p class="kicker">컴포넌트</p><h2>Input</h2></div>
+          <code class="path">client/components/ui/input.tsx</code>
+        </div>
+        <p class="intro">한 줄 텍스트 입력창입니다. 포커스되면 테두리가 foreground 색으로 바뀝니다.</p>
+        <div class="canvas">
+          <div class="specimens">
+            <figure><input id="input-default" class="ds-input" placeholder="이메일"><figcaption>기본</figcaption></figure>
+            <figure><input id="input-focus" class="ds-input is-focus" type="password" placeholder="비밀번호"><figcaption>포커스</figcaption></figure>
+            <figure><input id="input-filled" class="ds-input" type="email" value="name@example.com"><figcaption>입력됨</figcaption></figure>
+          </div>
+        </div>
+        <div class="block">
+          <h3 class="sub">속성</h3>
+          <div class="scroll">
+            <table class="doc-table">
+              <thead><tr><th>속성</th><th>타입</th><th>기본값</th><th>설명</th></tr></thead>
+              <tbody>
+                <tr><td><code>className</code></td><td><code>string</code></td><td><code>''</code></td><td>기본 클래스 뒤에 덧붙음</td></tr>
+                <tr><td>그 외</td><td>input 속성</td><td>—</td><td><code>type</code>, <code>placeholder</code>, <code>value</code>, <code>onChange</code> 등을 그대로 전달</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="block">
+          <h3 class="sub">코드</h3>
+          <pre class="code"><code>import { Input } from '@/components/ui/input';
+
+&lt;Input placeholder="이메일" value={email} onChange={(e) =&gt; setEmail(e.target.value)} /&gt;
+&lt;Input
+  placeholder="비밀번호"
+  type="password"
+  value={password}
+  onChange={(e) =&gt; setPassword(e.target.value)}
+/&gt;</code></pre>
+        </div>
+        <div class="block">
+          <h3 class="sub">사용 기준</h3>
+          <ul class="rules">
+            <li>높이가 버튼 md와 같은 40px입니다. 로그인 화면은 입력창 두 개와 primary 버튼을 너비 400px 안에 세로로 쌓습니다.</li>
+            <li>포커스 표시는 테두리 색 변화뿐이며 외곽선은 없습니다.</li>
+            <li>테두리와 흰 배경의 대비는 1.26:1로, 입력창 경계에 대한 WCAG 1.4.11 기준(3:1)보다 낮습니다.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="badge" class="section">
+        <div class="section-head">
+          <div class="title-group"><p class="kicker">컴포넌트</p><h2>Badge</h2></div>
+          <code class="path">client/components/ui/badge.tsx</code>
+        </div>
+        <p class="intro">문의 중요도를 보여 주는 배지입니다. <code>tone</code>으로 색을 고르며 기본값은 <code>neutral</code>입니다.</p>
+        <div class="canvas">
+          <div class="specimens">
+            <figure><span class="ds-badge ds-badge--danger">높음</span><figcaption>danger</figcaption></figure>
+            <figure><span class="ds-badge ds-badge--warning">보통</span><figcaption>warning</figcaption></figure>
+            <figure><span class="ds-badge ds-badge--success">낮음</span><figcaption>success</figcaption></figure>
+            <figure><span class="ds-badge ds-badge--neutral">미분류</span><figcaption>neutral</figcaption></figure>
+          </div>
+        </div>
+        <div class="block">
+          <h3 class="sub">tone</h3>
+          <div class="scroll">
+            <table class="doc-table">
+              <thead><tr><th>tone</th><th>표시</th><th>배경 / 글자</th><th>중요도</th><th>글자 대비</th></tr></thead>
+              <tbody>
+                <tr><td><code>danger</code></td><td><span class="ds-badge ds-badge--danger">높음</span></td><td>red-100 / red-700</td><td><code>HIGH</code></td><td class="num">5.26:1</td></tr>
+                <tr><td><code>warning</code></td><td><span class="ds-badge ds-badge--warning">보통</span></td><td>amber-100 / amber-700</td><td><code>MEDIUM</code></td><td class="num">4.54:1</td></tr>
+                <tr><td><code>success</code></td><td><span class="ds-badge ds-badge--success">낮음</span></td><td>green-100 / green-700</td><td><code>LOW</code></td><td class="num">4.50:1</td></tr>
+                <tr><td><code>neutral</code></td><td><span class="ds-badge ds-badge--neutral">미분류</span></td><td>neutral-100 / neutral-600</td><td><code>null</code></td><td class="num">7.15:1</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="block">
+          <h3 class="sub">코드</h3>
+          <pre class="code"><code>import { Badge } from '@/components/ui/badge';
+
+const PRIORITY_MAP = { HIGH: '높음', MEDIUM: '보통', LOW: '낮음' };
+const PRIORITY_TONE = { HIGH: 'danger', MEDIUM: 'warning', LOW: 'success' } as const;
+
+&lt;Badge tone={v.priority ? PRIORITY_TONE[v.priority] : 'neutral'}&gt;
+  {v.priority ? PRIORITY_MAP[v.priority] : '미분류'}
+&lt;/Badge&gt;</code></pre>
+        </div>
+        <div class="block">
+          <h3 class="sub">사용 기준</h3>
+          <ul class="rules">
+            <li>색만으로 구분하지 않고 항상 글자를 함께 씁니다.</li>
+            <li>warning(4.54:1)과 success(4.50:1)의 글자 대비는 AA 기준(4.5:1)에 걸쳐 있습니다. 색이나 글자 크기를 바꾸면 대비를 다시 확인합니다.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="table" class="section">
+        <div class="section-head">
+          <div class="title-group"><p class="kicker">컴포넌트</p><h2>Table</h2></div>
+          <code class="path">client/components/ui/table.tsx</code>
+        </div>
+        <p class="intro">문의 목록처럼 행과 열로 된 데이터를 보여 줍니다. 부품 6개를 HTML 표 구조 그대로 조합해 씁니다.</p>
+        <div class="canvas">
+          <div class="canvas-row">
+            <p class="canvas-label">예시 데이터입니다. 칸 너비는 문서 폭에 맞춰 줄였습니다.</p>
+            <div class="ds-table-wrap">
+              <table class="ds-table">
+                <thead>
+                  <tr>
+                    <th style="width: 64px">번호</th>
+                    <th>내용</th>
+                    <th style="width: 168px">등록일</th>
+                    <th style="width: 168px">수정일</th>
+                    <th style="width: 88px">중요도</th>
+                    <th class="ds-center" style="width: 88px">-</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="ds-truncate">13</td>
+                    <td class="ds-truncate">다크 모드도 지원해 주시면 안 되나요?</td>
+                    <td class="ds-truncate">2026-10-31 14:02:18</td>
+                    <td class="ds-truncate">2026-10-31 14:02:18</td>
+                    <td><span class="ds-badge ds-badge--neutral">미분류</span></td>
+                    <td class="ds-right"><button type="button" class="ds-btn ds-btn--secondary ds-btn--sm">삭제</button></td>
+                  </tr>
+                  <tr>
+                    <td class="ds-truncate">12</td>
+                    <td class="ds-truncate">같은 상품이 두 번 결제되었습니다. 한 건 취소해 주세요.</td>
+                    <td class="ds-truncate">2026-10-31 13:58:41</td>
+                    <td class="ds-truncate">2026-10-31 13:58:44</td>
+                    <td><span class="ds-badge ds-badge--danger">높음</span></td>
+                    <td class="ds-right"><button type="button" class="ds-btn ds-btn--secondary ds-btn--sm">삭제</button></td>
+                  </tr>
+                  <tr>
+                    <td class="ds-truncate">11</td>
+                    <td class="ds-truncate">배송 조회가 3일째 같은 위치에 멈춰 있습니다.</td>
+                    <td class="ds-truncate">2026-10-31 13:55:09</td>
+                    <td class="ds-truncate">2026-10-31 13:55:13</td>
+                    <td><span class="ds-badge ds-badge--warning">보통</span></td>
+                    <td class="ds-right"><button type="button" class="ds-btn ds-btn--secondary ds-btn--sm">삭제</button></td>
+                  </tr>
+                  <tr>
+                    <td class="ds-truncate">10</td>
+                    <td class="ds-truncate">상품 설명에 오타가 있어요.</td>
+                    <td class="ds-truncate">2026-10-31 13:51:37</td>
+                    <td class="ds-truncate">2026-10-31 13:51:40</td>
+                    <td><span class="ds-badge ds-badge--success">낮음</span></td>
+                    <td class="ds-right"><button type="button" class="ds-btn ds-btn--secondary ds-btn--sm">삭제</button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="block">
+          <h3 class="sub">부품</h3>
+          <div class="scroll">
+            <table class="doc-table">
+              <thead><tr><th>부품</th><th>요소</th><th>기본 클래스</th><th>역할</th></tr></thead>
+              <tbody>
+                <tr><td><code>Table</code></td><td>div &gt; table</td><td><code>rounded-lg border overflow-x-auto</code><span class="dim">table: w-full text-left text-sm</span></td><td>바깥 테두리, 가로 스크롤</td></tr>
+                <tr><td><code>TableHeader</code></td><td>thead</td><td><code>border-b bg-muted</code></td><td>머리글 배경과 아래 구분선</td></tr>
+                <tr><td><code>TableBody</code></td><td>tbody</td><td><code>divide-y</code></td><td>행 사이 구분선</td></tr>
+                <tr><td><code>TableRow</code></td><td>tr</td><td><code>transition-colors hover:bg-muted</code></td><td>행 hover</td></tr>
+                <tr><td><code>TableHead</code></td><td>th</td><td><code>h-11 px-4 font-medium text-muted-foreground</code></td><td>머리글 칸</td></tr>
+                <tr><td><code>TableCell</code></td><td>td</td><td><code>px-4 py-3</code></td><td>본문 칸</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="note">모든 부품은 <code>className</code>과 해당 HTML 요소의 속성을 받습니다.</p>
+        </div>
+        <div class="block">
+          <h3 class="sub">코드</h3>
+          <pre class="code"><code>import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+
+&lt;Table className="table-fixed"&gt;
+  &lt;TableHeader&gt;
+    &lt;TableRow&gt;
+      &lt;TableHead className="w-[100px]"&gt;번호&lt;/TableHead&gt;
+      &lt;TableHead&gt;내용&lt;/TableHead&gt;
+      &lt;TableHead className="w-[100px] text-center"&gt;-&lt;/TableHead&gt;
+    &lt;/TableRow&gt;
+  &lt;/TableHeader&gt;
+  &lt;TableBody&gt;
+    {inquiryList?.map((v) =&gt; (
+      &lt;TableRow key={v.id}&gt;
+        &lt;TableCell className="truncate"&gt;{v.id}&lt;/TableCell&gt;
+        &lt;TableCell className="truncate"&gt;{v.content}&lt;/TableCell&gt;
+        &lt;TableCell className="text-right"&gt;
+          &lt;Button size="sm" onClick={() =&gt; deleteInquiry(v.id)}&gt;삭제&lt;/Button&gt;
+        &lt;/TableCell&gt;
+      &lt;/TableRow&gt;
+    ))}
+  &lt;/TableBody&gt;
+&lt;/Table&gt;</code></pre>
+          <p class="note">등록일, 수정일, 중요도 칸은 생략했습니다.</p>
+        </div>
+        <div class="block">
+          <h3 class="sub">사용 기준</h3>
+          <ul class="rules">
+            <li>내용이 긴 표는 <code>table-fixed</code>로 칸 너비를 고정하고, 칸마다 <code>truncate</code>를 붙여 한 줄로 줄입니다.</li>
+            <li>정렬 기본값은 <code>&lt;table&gt;</code>의 <code>text-left</code>입니다. 칸마다 <code>text-center</code>나 <code>text-right</code>로 바꿉니다.</li>
+            <li>표가 화면보다 넓어지면 바깥 테두리 안에서 가로로 스크롤됩니다.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="cautions" class="section">
+        <h2>사용 시 주의</h2>
+        <div class="cautions">
+          <div class="caution">
+            <h3>className은 덮어쓰지 않고 덧붙습니다</h3>
+            <p>컴포넌트는 tailwind-merge 없이 <code>className</code>을 기본 클래스 뒤에 붙입니다. 같은 속성의 클래스가 겹치면 쓴 순서와 상관없이 Tailwind가 CSS를 생성한 순서로 적용됩니다. 그래서 칸마다 바꿔야 하는 정렬은 <code>TableHead</code>가 아니라 <code>&lt;table&gt;</code>에 <code>text-left</code>로 두었습니다. <code>TableHead</code>에 두면 <code>text-center</code>를 넘겨도 적용되지 않습니다.</p>
+          </div>
+          <div class="caution">
+            <h3>색은 의미 토큰으로 지정합니다</h3>
+            <p>화면 코드에서는 <code>bg-neutral-900</code> 같은 팔레트 클래스 대신 <code>bg-primary</code> 같은 의미 토큰을 씁니다. 토큰 값을 바꾸면 모든 화면에 함께 반영됩니다. 상태 색은 Badge의 <code>tone</code>으로만 씁니다.</p>
+          </div>
+          <div class="caution">
+            <h3>테두리 색은 따로 지정하지 않습니다</h3>
+            <p><code>border</code>나 <code>divide-y</code>만 쓰면 색은 border 토큰이 됩니다. Tailwind 4의 테두리 기본색은 <code>currentColor</code>인데, <code>globals.css</code>의 <code>@layer base</code>에서 모든 요소의 기본 테두리 색을 border 토큰으로 바꿨기 때문입니다.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <footer class="foot">
+    <p>2026년 10월 31일 기준입니다. 값은 <code>client/app/globals.css</code>, <code>client/components/ui</code>의 컴포넌트, Tailwind CSS 4.3.3의 <code>theme.css</code>에서 가져왔습니다. 대비는 oklch 값을 sRGB로 바꿔 WCAG 2 공식으로 계산했습니다.</p>
+  </footer>
+</div>
