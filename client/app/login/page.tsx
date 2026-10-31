@@ -1,5 +1,7 @@
 'use client';
 
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { User, useUserStore } from '@/stores/user';
 import { api } from '@/utils/api';
 import { useRouter } from 'next/navigation';
@@ -26,22 +28,11 @@ const page = () => {
     <div className="max-w-[400px] w-full m-auto flex flex-col gap-3">
       <div className="text-center text-3xl font-semibold">AI Inquiry Admin</div>
 
-      <input
-        className="border outline-none p-3"
-        placeholder="이메일"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
-      <input
-        className="border outline-none p-3"
-        placeholder="비밀번호"
-        type="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
-      <button className="border outline-none p-3 cursor-pointer hover:bg-gray-50" onClick={login}>
+      <Input placeholder="이메일" value={email} onChange={(e) => setEmail(e.target.value)} />
+      <Input placeholder="비밀번호" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+      <Button variant="primary" onClick={login}>
         로그인
-      </button>
+      </Button>
     </div>
   );
 };

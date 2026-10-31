@@ -1,5 +1,8 @@
 'use client';
 
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { api } from '@/utils/api';
 import { getMockInquiry } from '@/utils/mock';
 import dayjs from 'dayjs';
@@ -16,11 +19,7 @@ type InquiryResponse = {
 };
 
 const PRIORITY_MAP = { HIGH: '높음', MEDIUM: '보통', LOW: '낮음' };
-const PRIORITY_STYLE = {
-  HIGH: 'bg-red-100 text-red-700',
-  MEDIUM: 'bg-amber-100 text-amber-700',
-  LOW: 'bg-green-100 text-green-700',
-};
+const PRIORITY_TONE = { HIGH: 'danger', MEDIUM: 'warning', LOW: 'success' } as const;
 
 export default function Home() {
   const [inquiryList, setInquiryList] = useState<InquiryResponse[]>();
@@ -57,56 +56,51 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="p-3">
-      <div className="flex justify-between mb-10">
+    <div className="p-8">
+      <div className="flex justify-between items-center mb-6">
         <div className="text-2xl font-bold">문의 내역 관리</div>
         <div className="flex gap-2">
-          <button className="border p-2 cursor-pointer h-fit hover:bg-gray-50 outline-none" onClick={createInquiry}>
-            문의 생성
-          </button>
-          <button
-            className="border p-2 cursor-pointer h-fit hover:bg-gray-50 outline-none"
-            onClick={classifyInquiryPriority}
-          >
+          <Button onClick={createInquiry}>문의 생성</Button>
+          <Button variant="primary" onClick={classifyInquiryPriority}>
             문의 중요도 분류
-          </button>
+          </Button>
         </div>
       </div>
 
-      <div className="flex text-lg font-medium border-b p-2">
-        <div className="w-[100px]">번호</div>
-        <div className="flex-1">내용</div>
-        <div className="w-[200px]">등록일</div>
-        <div className="w-[200px]">수정일</div>
-        <div className="w-[200px]">중요도</div>
-        <div className="w-[100px] text-center">-</div>
-      </div>
-
-      {inquiryList?.map((v) => {
-        return (
-          <div key={v.id} className="border-b px-2 py-3 flex items-center">
-            <div className="w-[100px] line-clamp-1">{v.id}</div>
-            <div className="flex-1 line-clamp-1">{v.content}</div>
-            <div className="w-[200px] line-clamp-1">{dayjs(v.createdAt).format('YYYY-MM-DD HH:mm:ss')}</div>
-            <div className="w-[200px] line-clamp-1">{dayjs(v.updatedAt).format('YYYY-MM-DD HH:mm:ss')}</div>
-            <div className="w-[200px]">
-              <span
-                className={`rounded-full px-3 py-1 text-sm font-semibold ${v.priority ? PRIORITY_STYLE[v.priority] : 'bg-gray-100 text-gray-600'}`}
-              >
-                {v.priority ? PRIORITY_MAP[v.priority] : '미분류'}
-              </span>
-            </div>
-            <div className="w-[100px] flex justify-end">
-              <button
-                className="border px-5 py-1 cursor-pointer hover:bg-gray-50 outline-none"
-                onClick={() => deleteInquiry(v.id)}
-              >
-                삭제
-              </button>
-            </div>
-          </div>
-        );
-      })}
+      <Table className="table-fixed">
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[100px]">번호</TableHead>
+            <TableHead>내용</TableHead>
+            <TableHead className="w-[200px]">등록일</TableHead>
+            <TableHead className="w-[200px]">수정일</TableHead>
+            <TableHead className="w-[200px]">중요도</TableHead>
+            <TableHead className="w-[100px] text-center">-</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {inquiryList?.map((v) => {
+            return (
+              <TableRow key={v.id}>
+                <TableCell className="truncate">{v.id}</TableCell>
+                <TableCell className="truncate">{v.content}</TableCell>
+                <TableCell className="truncate">{dayjs(v.createdAt).format('YYYY-MM-DD HH:mm:ss')}</TableCell>
+                <TableCell className="truncate">{dayjs(v.updatedAt).format('YYYY-MM-DD HH:mm:ss')}</TableCell>
+                <TableCell>
+                  <Badge tone={v.priority ? PRIORITY_TONE[v.priority] : 'neutral'}>
+                    {v.priority ? PRIORITY_MAP[v.priority] : '미분류'}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button size="sm" onClick={() => deleteInquiry(v.id)}>
+                    삭제
+                  </Button>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
     </div>
   );
 }
