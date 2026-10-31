@@ -1,1 +1,28 @@
 @import 'tailwindcss';
+
+@theme {
+  --font-sans: var(--font-noto-sans-kr);
+
+  --color-background: var(--color-white);
+  --color-foreground: var(--color-neutral-900);
+  --color-muted: var(--color-neutral-50);
+  --color-muted-foreground: var(--color-neutral-500);
+  --color-border: var(--color-neutral-200);
+  --color-primary: var(--color-neutral-900);
+  --color-primary-foreground: var(--color-white);
+}
+
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+  }
+}
