@@ -8,6 +8,8 @@ AI가 고객 문의를 중요도(HIGH / MEDIUM / LOW)로 자동 분류해, 급�
 - **Server**: Express 5, Drizzle ORM, MySQL, Redis, BullMQ, JWT, Zod
 - **AI**: TypeSafe AI SDK (jev)
 
+> ORM 없이 Raw SQL로 작성 [`refactor/drizzle-to-raw-sql`](https://github.com/sungyun6789/ai-inquiry-admin/tree/refactor/drizzle-to-raw-sql)
+
 ## 전체 흐름
 
 ```mermaid
