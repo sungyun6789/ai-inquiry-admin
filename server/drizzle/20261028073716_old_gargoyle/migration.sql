@@ -1,1 +1,0 @@
-ALTER TABLE `inquiry_events` DROP COLUMN `metadata`;

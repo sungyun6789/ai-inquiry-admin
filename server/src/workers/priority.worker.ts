@@ -1,25 +1,33 @@
 import { Worker } from 'bullmq';
 import { redis } from '../redis.ts';
-import { and, eq, isNull } from 'drizzle-orm';
-import { inquiries, inquiryEvents } from '../db/schema.ts';
-import { db } from '../db/index.ts';
+import { pool, transaction } from '../db/index.ts';
 import { classifyPriority } from '../utils/jev.ts';
+import type { ResultSetHeader, RowDataPacket } from 'mysql2/promise';
 
 export const priorityWorker = new Worker(
   'priority',
   async (job) => {
     const { inquiryId, userId } = job.data;
-    const target = and(eq(inquiries.id, inquiryId), isNull(inquiries.priority), isNull(inquiries.deletedAt));
-    const [inquiry] = await db.select().from(inquiries).where(target);
+    const [[inquiry]] = await pool.query<RowDataPacket[]>(
+      'select * from inquiries where id = ? and priority is null and deleted_at is null',
+      [inquiryId],
+    );
     if (!inquiry) return;
 
     const priority = await classifyPriority(inquiry.content);
 
-    await db.transaction(async (tx) => {
-      const [result] = await tx.update(inquiries).set({ priority }).where(target);
+    await transaction(async (conn) => {
+      const [result] = await conn.query<ResultSetHeader>(
+        'update inquiries set priority = ? where id = ? and priority is null and deleted_at is null',
+        [priority, inquiryId],
+      );
       if (result.affectedRows === 0) return;
 
-      await tx.insert(inquiryEvents).values({ inquiryId, userId, eventType: 'UPDATED' });
+      await conn.query('insert into inquiry_events (inquiry_id, user_id, event_type) values (?, ?, ?)', [
+        inquiryId,
+        userId,
+        'UPDATED',
+      ]);
     });
   },
   { connection: redis },

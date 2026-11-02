@@ -1,14 +1,13 @@
 import type { NextFunction, Request, Response } from 'express';
-import { eq } from 'drizzle-orm';
-import { db } from '../db/index.ts';
-import { users } from '../db/schema.ts';
+import type { RowDataPacket } from 'mysql2/promise';
+import { pool } from '../db/index.ts';
 
 export async function admin(req: Request, res: Response, next: NextFunction) {
   if (!req.user) {
     return res.status(401).json({ message: '인증이 필요합니다.' });
   }
 
-  const [user] = await db.select({ role: users.role }).from(users).where(eq(users.id, req.user.id));
+  const [[user]] = await pool.query<RowDataPacket[]>('select role from users where id = ?', [req.user.id]);
 
   if (!user) {
     return res.status(401).json({ message: '사용자를 찾을 수 없습니다.' });

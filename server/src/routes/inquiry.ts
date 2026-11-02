@@ -1,23 +1,18 @@
 import { type Request, type Response, Router } from 'express';
 import { authenticate } from '../middlewares/auth.middleware.ts';
-import { db } from '../db/index.ts';
-import { inquiries, inquiryEvents } from '../db/schema.ts';
-import { eq, and, isNull, asc } from 'drizzle-orm';
+import { pool, transaction } from '../db/index.ts';
 import { admin } from '../middlewares/admin.middleware.ts';
 import { validate } from '../middlewares/validate.middleware.ts';
 import { createInquirySchema, updateInquirySchema } from '../schemas/inquiry.schema.ts';
 import { priorityQueue } from '../queues/priority.queue.ts';
+import type { ResultSetHeader, RowDataPacket } from 'mysql2/promise';
 
 export const inquiryRouter = Router();
 
 // 문의 조회
 inquiryRouter.get('/', authenticate, async (req: Request, res: Response) => {
-  const inquiry = await db
-    .select()
-    .from(inquiries)
-    .where(isNull(inquiries.deletedAt))
-    .orderBy(asc(inquiries.priority), asc(inquiries.createdAt));
-  return res.json(inquiry);
+  const [rows] = await pool.query('select * from inquiries where deleted_at is null order by priority, created_at');
+  return res.json(rows);
 });
 
 // 문의 생성
@@ -25,10 +20,17 @@ inquiryRouter.post('/', authenticate, admin, validate(createInquirySchema), asyn
   const userId = req.user!.id;
   const { content } = req.body;
 
-  const insertedInquiry = await db.transaction(async (tx) => {
-    const [inserted] = await tx.insert(inquiries).values({ content, assigneeId: userId }).$returningId();
-    await tx.insert(inquiryEvents).values({ inquiryId: inserted.id, userId, eventType: 'CREATED' });
-    return inserted;
+  const insertedInquiry = await transaction(async (conn) => {
+    const [result] = await conn.query<ResultSetHeader>('insert into inquiries (content, assignee_id) values(?, ?)', [
+      content,
+      userId,
+    ]);
+    await conn.query('insert into inquiry_events (inquiry_id, user_id, event_type) values (?, ?, ?)', [
+      result.insertId,
+      userId,
+      'CREATED',
+    ]);
+    return { id: result.insertId };
   });
 
   try {
@@ -49,18 +51,21 @@ inquiryRouter.patch('/:id', authenticate, admin, validate(updateInquirySchema), 
   const userId = req.user!.id;
   const id = Number(req.params.id);
 
-  const inquiry = await db.transaction(async (tx) => {
-    const [before] = await tx
-      .select()
-      .from(inquiries)
-      .where(and(eq(inquiries.id, id), isNull(inquiries.deletedAt)))
-      .for('update');
+  const inquiry = await transaction(async (conn) => {
+    const [[before]] = await conn.query<RowDataPacket[]>(
+      'select * from inquiries where id = ? and deleted_at is null for update',
+      [id],
+    );
     if (!before) return null;
 
-    await tx.update(inquiries).set(req.body).where(eq(inquiries.id, id));
-    await tx.insert(inquiryEvents).values({ inquiryId: id, userId, eventType: 'UPDATED' });
+    await conn.query('update inquiries set ? where id = ?', [req.body, id]);
+    await conn.query('insert into inquiry_events (inquiry_id, user_id, event_type) values (?, ?, ?)', [
+      id,
+      userId,
+      'UPDATED',
+    ]);
 
-    const [after] = await tx.select().from(inquiries).where(eq(inquiries.id, id));
+    const [[after]] = await conn.query<RowDataPacket[]>('select * from inquiries where id = ?', [id]);
     return after;
   });
 
@@ -76,15 +81,19 @@ inquiryRouter.delete('/:id', authenticate, admin, async (req: Request, res: Resp
   const userId = req.user!.id;
   const id = Number(req.params.id);
 
-  const deleted = await db.transaction(async (tx) => {
-    const [result] = await tx
-      .update(inquiries)
-      .set({ deletedAt: new Date() })
-      .where(and(eq(inquiries.id, id), isNull(inquiries.deletedAt)));
+  const deleted = await transaction(async (conn) => {
+    const [result] = await conn.query<ResultSetHeader>(
+      'update inquiries set deleted_at = now() where id = ? and deleted_at is null',
+      [id],
+    );
 
     if (result.affectedRows === 0) return false;
 
-    await tx.insert(inquiryEvents).values({ inquiryId: id, userId, eventType: 'DELETED' });
+    await conn.query('insert into inquiry_events (inquiry_id, user_id, event_type) values (?, ?, ?)', [
+      id,
+      userId,
+      'DELETED',
+    ]);
     return true;
   });
 
@@ -99,10 +108,9 @@ inquiryRouter.delete('/:id', authenticate, admin, async (req: Request, res: Resp
 inquiryRouter.post('/priority', authenticate, admin, async (req: Request, res: Response) => {
   const userId = req.user!.id;
 
-  const rows = await db
-    .select({ id: inquiries.id })
-    .from(inquiries)
-    .where(and(isNull(inquiries.priority), isNull(inquiries.deletedAt)));
+  const [rows] = await pool.query<RowDataPacket[]>(
+    'select id from inquiries where priority is null and deleted_at is null',
+  );
 
   if (rows.length === 0) return res.json({ message: '중요도를 분류할 문의가 없습니다.' });
 
