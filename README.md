@@ -35,7 +35,7 @@ sequenceDiagram
     W->>AI: 문의 내용으로 중요도 분류
     AI-->>W: HIGH / MEDIUM / LOW
     W->>DB: 미분류 상태일 때만 중요도 저장 + UPDATED 이벤트
-    loop 3초마다
+    loop 5초마다
         C->>S: GET /inquiry
         S-->>C: 미분류 → HIGH → MEDIUM → LOW 순 목록
     end
