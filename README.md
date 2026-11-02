@@ -2,6 +2,8 @@
 
 AI가 고객 문의를 중요도(HIGH / MEDIUM / LOW)로 자동 분류해, 급한 문의부터 보여 주는 관리자 서비스
 
+서버 설계에 집중한 프로젝트로, 화면은 분류 결과를 확인하는 용도로 단순하게 구성
+
 - **Client**: Next.js 16, React 19, Zustand, axios, Tailwind CSS
 - **Server**: Express 5, Drizzle ORM, MySQL, Redis, BullMQ, JWT, Zod
 - **AI**: TypeSafe AI SDK (jev)
