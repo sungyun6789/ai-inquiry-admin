@@ -10,12 +10,12 @@ import { useEffect, useState } from 'react';
 
 type InquiryResponse = {
   id: number;
-  assigneeId: number;
+  assignee_id: number | null;
   content: string;
   priority: 'HIGH' | 'MEDIUM' | 'LOW' | null;
-  deletedAt: string | null;
-  createdAt: string;
-  updatedAt: string;
+  deleted_at: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 const PRIORITY_MAP = { HIGH: '높음', MEDIUM: '보통', LOW: '낮음' };
@@ -84,8 +84,8 @@ export default function Home() {
               <TableRow key={v.id}>
                 <TableCell className="truncate">{v.id}</TableCell>
                 <TableCell className="truncate">{v.content}</TableCell>
-                <TableCell className="truncate">{dayjs(v.createdAt).format('YYYY-MM-DD HH:mm:ss')}</TableCell>
-                <TableCell className="truncate">{dayjs(v.updatedAt).format('YYYY-MM-DD HH:mm:ss')}</TableCell>
+                <TableCell className="truncate">{dayjs(v.created_at).format('YYYY-MM-DD HH:mm:ss')}</TableCell>
+                <TableCell className="truncate">{dayjs(v.updated_at).format('YYYY-MM-DD HH:mm:ss')}</TableCell>
                 <TableCell>
                   <Badge tone={v.priority ? PRIORITY_TONE[v.priority] : 'neutral'}>
                     {v.priority ? PRIORITY_MAP[v.priority] : '미분류'}
